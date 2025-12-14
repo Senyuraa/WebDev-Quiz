@@ -1,0 +1,700 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebDev Quiz</title>
+    <script src="/_sdk/element_sdk.js"></script>
+    <style>
+        body {
+            box-sizing: border-box;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            height: 100%;
+            width: 100%;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e0e0e0;
+            overflow-x: hidden;
+        }
+
+        .game-container {
+            height: 100%;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+            overflow-y: auto;
+        }
+
+        .screen {
+            display: none;
+            animation: fadeIn 0.5s ease-in;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            font-size: 7em;
+            text-align: center;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #00d4ff, #7b2cbf);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(0, 212, 255, 0.3);
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 1.2em;
+            margin-bottom: 50px;
+            color: #a0a0a0;
+        }
+
+        .language-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .language-card {
+            background: linear-gradient(135deg, #2a2a4a 0%, #1f1f3a 100%);
+            border: 2px solid #3a3a5a;
+            border-radius: 20px;
+            padding: 40px 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .language-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .language-card:hover::before {
+            left: 100%;
+        }
+
+        .language-card:hover {
+            transform: translateY(-10px);
+            border-color: #00d4ff;
+            box-shadow: 0 10px 40px rgba(0, 212, 255, 0.3);
+        }
+
+        .language-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        .language-name {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #00d4ff;
+        }
+
+        .quiz-container {
+            background: linear-gradient(135deg, #2a2a4a 0%, #1f1f3a 100%);
+            border: 2px solid #3a3a5a;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .progress-text {
+            font-size: 1.2em;
+            color: #7b2cbf;
+            font-weight: bold;
+        }
+
+        .score-display {
+            font-size: 1.2em;
+            color: #00d4ff;
+            font-weight: bold;
+        }
+
+        .question-text {
+            font-size: 1.5em;
+            margin-bottom: 30px;
+            line-height: 1.6;
+            color: #ffffff;
+        }
+
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .option-btn {
+            background: linear-gradient(135deg, #3a3a5a 0%, #2a2a4a 100%);
+            border: 2px solid #4a4a6a;
+            border-radius: 12px;
+            padding: 20px 25px;
+            font-size: 1.1em;
+            color: #e0e0e0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .option-btn:hover:not(.correct):not(.incorrect):not(:disabled) {
+            border-color: #00d4ff;
+            background: linear-gradient(135deg, #4a4a7a 0%, #3a3a5a 100%);
+            transform: translateX(5px);
+        }
+
+        .option-btn.correct {
+            background: linear-gradient(135deg, #1a5f3a 0%, #0f4a2a 100%);
+            border-color: #00ff88;
+            animation: pulse 0.5s ease;
+        }
+
+        .option-btn.incorrect {
+            background: linear-gradient(135deg, #5f1a1a 0%, #4a0f0f 100%);
+            border-color: #ff0044;
+            animation: shake 0.5s ease;
+        }
+
+        .option-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.02);
+            }
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-10px);
+            }
+
+            75% {
+                transform: translateX(10px);
+            }
+        }
+
+        .next-btn {
+            background: linear-gradient(45deg, #7b2cbf, #00d4ff);
+            border: none;
+            border-radius: 12px;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            color: #ffffff;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 30px;
+            width: 100%;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(123, 44, 191, 0.4);
+        }
+
+        .next-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(123, 44, 191, 0.6);
+        }
+
+        .next-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .results-container {
+            text-align: center;
+            background: linear-gradient(135deg, #2a2a4a 0%, #1f1f3a 100%);
+            border: 2px solid #3a3a5a;
+            border-radius: 20px;
+            padding: 50px 40px;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .trophy-icon {
+            font-size: 6em;
+            margin-bottom: 20px;
+            animation: bounce 1s ease infinite;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
+        .final-score {
+            font-size: 3em;
+            color: #00d4ff;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+
+        .score-message {
+            font-size: 1.5em;
+            color: #a0a0a0;
+            margin-bottom: 40px;
+        }
+
+        .results-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #7b2cbf, #00d4ff);
+            border: none;
+            border-radius: 12px;
+            padding: 15px 35px;
+            font-size: 1.2em;
+            color: #ffffff;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(123, 44, 191, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(123, 44, 191, 0.6);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #3a3a5a 0%, #2a2a4a 100%);
+            border: 2px solid #4a4a6a;
+            border-radius: 12px;
+            padding: 15px 35px;
+            font-size: 1.2em;
+            color: #e0e0e0;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            border-color: #00d4ff;
+            transform: translateY(-3px);
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 7em;
+            }
+
+            .subtitle {
+                font-size: 1em;
+            }
+
+            .language-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .quiz-container {
+                padding: 25px;
+            }
+
+            .question-text {
+                font-size: 1.2em;
+            }
+
+            .option-btn {
+                font-size: 1em;
+                padding: 15px 20px;
+            }
+        }
+    </style>
+    <style>
+        @view-transition {
+            navigation: auto;
+        }
+    </style>
+    <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+    <script src="https://cdn.tailwindcss.com" type="text/javascript"></script>
+</head>
+
+<body>
+    <div class="game-container"><!-- Welcome Screen -->
+        <div id="welcomeScreen" class="screen active">
+            <h1 id="gameTitle">WebDev QUIZ - Senyura</h1>
+            <p class="subtitle" id="welcomeMessage">Test your knowledge and become a coding master!</p>
+            <div class="language-grid">
+                <div class="language-card" onclick="startQuiz('html')">
+                    <div class="language-icon">
+                        🌐
+                    </div>
+                    <div class="language-name">
+                        HTML
+                    </div>
+                </div>
+                <div class="language-card" onclick="startQuiz('css')">
+                    <div class="language-icon">
+                        🎨
+                    </div>
+                    <div class="language-name">
+                        CSS
+                    </div>
+                </div>
+                <div class="language-card" onclick="startQuiz('javascript')">
+                    <div class="language-icon">
+                        ⚡
+                    </div>
+                    <div class="language-name">
+                        JavaScript
+                    </div>
+                </div>
+            </div>
+        </div><!-- Quiz Screen -->
+        <div id="quizScreen" class="screen">
+            <div class="quiz-container">
+                <div class="quiz-header">
+                    <div class="progress-text" id="progressText">
+                        Question 1 of 5
+                    </div>
+                    <div class="score-display" id="scoreDisplay">
+                        Score: 0
+                    </div>
+                </div>
+                <div class="question-text" id="questionText"></div>
+                <div class="options-container" id="optionsContainer"></div><button class="next-btn" id="nextBtn"
+                    onclick="nextQuestion()" disabled>Next Question</button>
+            </div>
+        </div><!-- Results Screen -->
+        <div id="resultsScreen" class="screen">
+            <div class="results-container">
+                <div class="trophy-icon">
+                    🏆
+                </div>
+                <h2 id="resultsTitle">Quiz Complete!</h2>
+                <div class="final-score" id="finalScore">
+                    0/5
+                </div>
+                <p class="score-message" id="scoreMessage">Great effort!</p>
+                <div class="results-buttons"><button class="btn-primary" id="restartBtn" onclick="restartQuiz()">Play
+                        Again</button> <button class="btn-secondary" id="backBtn" onclick="backToMenu()">Choose
+                        Language</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const defaultConfig = {
+            game_title: "WebDev Quiz - Senyura",
+            welcome_message: "Test your knowledge and become a coding master!",
+            start_button_text: "Start Quiz",
+            results_title: "Quiz Complete!",
+            restart_button_text: "Play Again",
+            back_button_text: "Choose Language"
+        };
+
+        const quizData = {
+            html: [
+                {
+                    question: "What does HTML stand for?",
+                    options: ["Hyper Text Markup Language", "High Tech Modern Language", "Home Tool Markup Language", "Hyperlinks and Text Markup Language"],
+                    correct: 0
+                },
+                {
+                    question: "Which HTML tag is used to create a hyperlink?",
+                    options: ["<link>", "<a>", "<href>", "<url>"],
+                    correct: 1
+                },
+                {
+                    question: "Which tag is used for the largest heading?",
+                    options: ["<heading>", "<h6>", "<h1>", "<head>"],
+                    correct: 2
+                },
+                {
+                    question: "What is the correct HTML element for inserting a line break?",
+                    options: ["<break>", "<lb>", "<br>", "<newline>"],
+                    correct: 2
+                },
+                {
+                    question: "Which HTML attribute is used to define inline styles?",
+                    options: ["class", "style", "css", "styles"],
+                    correct: 1
+                }
+            ],
+            css: [
+                {
+                    question: "What does CSS stand for?",
+                    options: ["Computer Style Sheets", "Cascading Style Sheets", "Creative Style System", "Colorful Style Sheets"],
+                    correct: 1
+                },
+                {
+                    question: "Which property is used to change the background color?",
+                    options: ["color", "bgcolor", "background-color", "bg-color"],
+                    correct: 2
+                },
+                {
+                    question: "How do you add a comment in CSS?",
+                    options: ["// comment", "<!-- comment -->", "/* comment */", "# comment"],
+                    correct: 2
+                },
+                {
+                    question: "Which property controls the text size?",
+                    options: ["text-size", "font-size", "text-style", "font-style"],
+                    correct: 1
+                },
+                {
+                    question: "How do you select an element with class 'box'?",
+                    options: ["#box", ".box", "*box", "box"],
+                    correct: 1
+                }
+            ],
+            javascript: [
+                {
+                    question: "Which keyword is used to declare a variable in JavaScript?",
+                    options: ["var", "int", "string", "variable"],
+                    correct: 0
+                },
+                {
+                    question: "What is the correct way to write a JavaScript array?",
+                    options: ["var colors = 'red', 'green', 'blue'", "var colors = (1:'red', 2:'green')", "var colors = ['red', 'green', 'blue']", "var colors = 1 = ('red'), 2 = ('green')"],
+                    correct: 2
+                },
+                {
+                    question: "How do you call a function named 'myFunction'?",
+                    options: ["call myFunction()", "myFunction()", "call function myFunction", "execute myFunction()"],
+                    correct: 1
+                },
+                {
+                    question: "Which operator is used to compare both value and type?",
+                    options: ["==", "=", "===", "!="],
+                    correct: 2
+                },
+                {
+                    question: "How do you write an IF statement in JavaScript?",
+                    options: ["if i = 5 then", "if (i == 5)", "if i == 5", "if i = 5"],
+                    correct: 1
+                }
+            ]
+        };
+
+        let currentLanguage = '';
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let questions = [];
+        let selectedAnswer = null;
+
+        function startQuiz(language) {
+            currentLanguage = language;
+            currentQuestionIndex = 0;
+            score = 0;
+            selectedAnswer = null;
+            questions = [...quizData[language]];
+
+            showScreen('quizScreen');
+            displayQuestion();
+        }
+
+        function displayQuestion() {
+            const question = questions[currentQuestionIndex];
+            const config = window.elementSdk?.config || defaultConfig;
+
+            document.getElementById('progressText').textContent = `Question ${currentQuestionIndex + 1} of ${questions.length}`;
+            document.getElementById('scoreDisplay').textContent = `Score: ${score}`;
+            document.getElementById('questionText').textContent = question.question;
+
+            const optionsContainer = document.getElementById('optionsContainer');
+            optionsContainer.innerHTML = '';
+
+            question.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.className = 'option-btn';
+                button.textContent = option;
+                button.onclick = () => selectAnswer(index);
+                optionsContainer.appendChild(button);
+            });
+
+            document.getElementById('nextBtn').disabled = true;
+            selectedAnswer = null;
+        }
+
+        function selectAnswer(index) {
+            if (selectedAnswer !== null) return;
+
+            selectedAnswer = index;
+            const question = questions[currentQuestionIndex];
+            const buttons = document.querySelectorAll('.option-btn');
+
+            buttons.forEach((button, i) => {
+                button.disabled = true;
+
+                if (i === question.correct) {
+                    button.classList.add('correct');
+                } else if (i === index && i !== question.correct) {
+                    button.classList.add('incorrect');
+                }
+            });
+
+            if (index === question.correct) {
+                score++;
+                document.getElementById('scoreDisplay').textContent = `Score: ${score}`;
+            }
+
+            document.getElementById('nextBtn').disabled = false;
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+
+            if (currentQuestionIndex < questions.length) {
+                displayQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            const config = window.elementSdk?.config || defaultConfig;
+            const percentage = (score / questions.length) * 100;
+            let message = '';
+
+            if (percentage === 100) {
+                message = 'Perfect score! You are a master! 🎉';
+            } else if (percentage >= 80) {
+                message = 'Excellent work! Keep it up! 👏';
+            } else if (percentage >= 60) {
+                message = 'Good job! You are getting there! 💪';
+            } else if (percentage >= 40) {
+                message = 'Not bad! Keep practicing! 📚';
+            } else {
+                message = 'Keep learning! You will improve! 🌱';
+            }
+
+            document.getElementById('finalScore').textContent = `${score}/${questions.length}`;
+            document.getElementById('scoreMessage').textContent = message;
+            document.getElementById('resultsTitle').textContent = config.results_title;
+            document.getElementById('restartBtn').textContent = config.restart_button_text;
+            document.getElementById('backBtn').textContent = config.back_button_text;
+
+            showScreen('resultsScreen');
+        }
+
+        function restartQuiz() {
+            startQuiz(currentLanguage);
+        }
+
+        function backToMenu() {
+            showScreen('welcomeScreen');
+        }
+
+        function showScreen(screenId) {
+            const screens = document.querySelectorAll('.screen');
+            screens.forEach(screen => screen.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        async function onConfigChange(config) {
+            document.getElementById('gameTitle').textContent = config.game_title || defaultConfig.game_title;
+            document.getElementById('welcomeMessage').textContent = config.welcome_message || defaultConfig.welcome_message;
+            document.getElementById('resultsTitle').textContent = config.results_title || defaultConfig.results_title;
+            document.getElementById('restartBtn').textContent = config.restart_button_text || defaultConfig.restart_button_text;
+            document.getElementById('backBtn').textContent = config.back_button_text || defaultConfig.back_button_text;
+        }
+
+        function mapToCapabilities(config) {
+            return {
+                recolorables: [],
+                borderables: [],
+                fontEditable: undefined,
+                fontSizeable: undefined
+            };
+        }
+
+        function mapToEditPanelValues(config) {
+            return new Map([
+                ["game_title", config.game_title || defaultConfig.game_title],
+                ["welcome_message", config.welcome_message || defaultConfig.welcome_message],
+                ["start_button_text", config.start_button_text || defaultConfig.start_button_text],
+                ["results_title", config.results_title || defaultConfig.results_title],
+                ["restart_button_text", config.restart_button_text || defaultConfig.restart_button_text],
+                ["back_button_text", config.back_button_text || defaultConfig.back_button_text]
+            ]);
+        }
+
+        if (window.elementSdk) {
+            window.elementSdk.init({
+                defaultConfig,
+                onConfigChange,
+                mapToCapabilities,
+                mapToEditPanelValues
+            });
+        }
+    </script>
+    <script>(function () { function c() { var b = a.contentDocument || a.contentWindow.document; if (b) { var d = b.createElement('script'); d.innerHTML = "window.__CF$cv$params={r:'9adfe786c04f7956',t:'MTc2NTczODQxMC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);"; b.getElementsByTagName('head')[0].appendChild(d) } } if (document.body) { var a = document.createElement('iframe'); a.height = 1; a.width = 1; a.style.position = 'absolute'; a.style.top = 0; a.style.left = 0; a.style.border = 'none'; a.style.visibility = 'hidden'; document.body.appendChild(a); if ('loading' !== document.readyState) c(); else if (window.addEventListener) document.addEventListener('DOMContentLoaded', c); else { var e = document.onreadystatechange || function () { }; document.onreadystatechange = function (b) { e(b); 'loading' !== document.readyState && (document.onreadystatechange = e, c()) } } } })();</script>
+</body>
+
+</html>
